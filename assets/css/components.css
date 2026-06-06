@@ -1,0 +1,420 @@
+/* ============================================================
+   Header
+   ============================================================ */
+
+.header {
+    background: var(--color-card);
+    border-bottom: 1px solid var(--color-border);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header__logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.header__nav {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.header__nav a {
+    text-decoration: none;
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.header__nav a:hover {
+    color: var(--color-primary);
+}
+
+.header__cart {
+    position: relative;
+    text-decoration: none;
+    font-size: 1.5rem;
+    color: var(--color-text);
+}
+
+.header__cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background: var(--color-danger);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================================
+   Produktová karta
+   ============================================================ */
+
+.product-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card__image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--color-border);
+}
+
+.product-card__body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.product-card__category {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.product-card__name {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.product-card__price {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.product-card__price-current {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.product-card__price-original {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+}
+
+.product-card__discount {
+    background: var(--color-danger);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-sm);
+}
+
+.product-card__btn {
+    display: block;
+    width: 100%;
+    padding: 0.6rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.product-card__btn:hover {
+    background: var(--color-primary-dark);
+}
+
+.product-card__btn--variant {
+    background: white;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+    text-align: center;
+    text-decoration: none;
+}
+
+.product-card__btn--variant:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+
+.footer {
+    margin-top: 3rem;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-card);
+    padding: 1.5rem 2rem;
+}
+
+.footer__inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+.footer__nav {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.footer__nav a {
+    text-decoration: none;
+    color: var(--color-text-muted);
+}
+
+.footer__nav a:hover {
+    color: var(--color-primary);
+}
+
+/* ============================================================
+   Info box (jen pro ukázku)
+   ============================================================ */
+
+.info-box {
+    margin-top: 2rem;
+    background: var(--color-info-bg);
+    border: 1px solid var(--color-info-border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+.info-box h2 {
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-primary);
+}
+
+.info-box h2:first-child {
+    margin-top: 0;
+}
+
+.info-box code {
+    background: var(--color-info-code);
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.info-box pre {
+    background: var(--color-text);
+    color: var(--color-border);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+}
+
+.info-box pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+.info-box ul {
+    margin-top: 0.5rem;
+    padding-left: 1.5rem;
+}
+
+/* ============================================================
+   Produktová karta – odkazy
+   ============================================================ */
+
+.product-card__name a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.product-card__name a:hover {
+    color: var(--color-primary);
+}
+
+/* ============================================================
+   Detail produktu
+   ============================================================ */
+
+.product-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+}
+
+.product-detail__image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    background: var(--color-border);
+}
+
+.product-detail__gallery {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.product-detail__gallery img {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    cursor: pointer;
+}
+
+.product-detail__gallery img:hover {
+    border-color: var(--color-primary);
+}
+
+.product-detail__category {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.product-detail__name {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+}
+
+.product-detail__price {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.product-detail__price-current {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.product-detail__price-original {
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+}
+
+.product-detail__description {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+}
+
+.product-detail__btn {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.product-detail__btn:hover {
+    background: var(--color-primary-dark);
+}
+
+/* ============================================================
+   Tabulka parametrů
+   ============================================================ */
+
+.params-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+}
+
+.params-table caption {
+    text-align: left;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.params-table tr {
+    border-bottom: 1px solid var(--color-border);
+}
+
+.params-table th,
+.params-table td {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+}
+
+.params-table th {
+    font-weight: 600;
+    width: 40%;
+    color: var(--color-text-muted);
+}
+
+/* ============================================================
+   Varianty produktu (selecty na detailu)
+   ============================================================ */
+
+.product-detail__variant {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.product-detail__variant label {
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.product-detail__variant select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    background: var(--color-card);
+    color: var(--color-text);
+    cursor: pointer;
+    min-width: 160px;
+}
+
+.product-detail__variant select:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -1px;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+}

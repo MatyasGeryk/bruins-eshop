@@ -1,0 +1,12 @@
+/*
+ * Hlavní CSS soubor – importuje ostatní.
+ *
+ * Tento soubor slouží jako ukázkový základ.
+ * Studenti ho nahradí svým vlastním CSS z 1. fáze projektu.
+ */
+
+@import 'variables.css';
+@import 'base.css';
+@import 'layout.css';
+@import 'components.css';
+@import 'responsive.css';
