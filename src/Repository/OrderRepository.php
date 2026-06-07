@@ -1,139 +1,85 @@
 <?php
-
 declare(strict_types=1);
 
-final class OrderRepository {
+final class OrderRepository
+{
+    private PDO $pdo;
 
-	private PDO $db;
+    public function __construct()
+    {
+        $this->pdo = Database::get();
+    }
 
-	public function __construct() {
-		$this->db = Database::getConnection();
-	}
+    /**
+     * @param array<int,array<string,mixed>> $items detailní položky košíku
+     */
+    public function create(
+        int $customerId,
+        string $orderNumber,
+        int $shippingMethodId,
+        int $paymentMethodId,
+        float $itemsTotal,
+        float $shippingPrice,
+        float $paymentFee,
+        float $totalPrice,
+        array $items
+    ): int {
+        $this->pdo->beginTransaction();
+        try {
+            $sql = 'INSERT INTO orders
+                (order_number, customer_id, shipping_method_id, payment_method_id,
+                 items_total, shipping_price, payment_fee, total_price, status, created_at)
+                VALUES
+                (:order_number, :customer_id, :shipping_method_id, :payment_method_id,
+                 :items_total, :shipping_price, :payment_fee, :total_price, :status, :created_at)';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                'order_number'       => $orderNumber,
+                'customer_id'        => $customerId,
+                'shipping_method_id' => $shippingMethodId,
+                'payment_method_id'  => $paymentMethodId,
+                'items_total'        => $itemsTotal,
+                'shipping_price'     => $shippingPrice,
+                'payment_fee'        => $paymentFee,
+                'total_price'        => $totalPrice,
+                'status'             => 'new',
+                'created_at'         => date('Y-m-d H:i:s'),
+            ]);
+            $orderId = (int)$this->pdo->lastInsertId();
 
-	/**
-	 * Najde objednávku podle ID (včetně zákazníka, dopravy, platby a položek).
-	 */
-	public function getById(int $id): ?OrderDTO {
-		$stmt = $this->db->prepare('SELECT * FROM orders WHERE id = :id');
-		$stmt->execute(['id' => $id]);
+            $itemStmt = $this->pdo->prepare(
+                'INSERT INTO order_items
+                 (order_id, product_id, product_name, variant_name, variant_value, unit_price, quantity, subtotal)
+                 VALUES (:order_id, :product_id, :product_name, :variant_name, :variant_value, :unit_price, :quantity, :subtotal)'
+            );
 
-		$row = $stmt->fetch();
+            foreach ($items as $row) {
+                /** @var ProductDTO $p */
+                $p = $row['product'];
+                /** @var ProductVariantDTO|null $v */
+                $v = $row['variant'];
+                $itemStmt->execute([
+                    'order_id'      => $orderId,
+                    'product_id'    => $p->id,
+                    'product_name'  => $p->name,
+                    'variant_name'  => $v?->name,
+                    'variant_value' => $v?->value,
+                    'unit_price'    => $row['unit_price'],
+                    'quantity'      => $row['quantity'],
+                    'subtotal'      => $row['subtotal'],
+                ]);
+            }
 
-		if (!$row) {
-			return NULL;
-		}
+            $this->pdo->commit();
+            return $orderId;
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
 
-		$order = OrderDTO::fromRow($row);
-
-		$customerRepo = new CustomerRepository();
-		$shippingRepo = new ShippingMethodRepository();
-		$paymentRepo = new PaymentMethodRepository();
-
-		return new OrderDTO(
-			id: $order->id,
-			customerId: $order->customerId,
-			shippingMethodId: $order->shippingMethodId,
-			paymentMethodId: $order->paymentMethodId,
-			shippingPrice: $order->shippingPrice,
-			paymentPrice: $order->paymentPrice,
-			note: $order->note,
-			totalPrice: $order->totalPrice,
-			status: $order->status,
-			createdAt: $order->createdAt,
-			customer: $customerRepo->getById($order->customerId),
-			shippingMethod: $shippingRepo->getById($order->shippingMethodId),
-			paymentMethod: $paymentRepo->getById($order->paymentMethodId),
-			items: $this->getItems($order->id),
-		);
-	}
-
-	/**
-	 * Vytvoří novou objednávku z položek košíku.
-	 *
-	 * @param list<CartItemDTO> $cartItems
-	 */
-	public function create(
-		int $customerId,
-		int $shippingMethodId,
-		int $paymentMethodId,
-		string $note,
-		array $cartItems,
-	): OrderDTO {
-		$shippingRepo = new ShippingMethodRepository();
-		$paymentRepo = new PaymentMethodRepository();
-
-		$shipping = $shippingRepo->getById($shippingMethodId)
-			?? throw new \RuntimeException("Způsob dopravy s ID $shippingMethodId neexistuje.");
-		$payment = $paymentRepo->getById($paymentMethodId)
-			?? throw new \RuntimeException("Způsob platby s ID $paymentMethodId neexistuje.");
-
-		$itemsPrice = array_sum(
-			array_map(fn(CartItemDTO $item): float => $item->getTotalPrice(), $cartItems),
-		);
-
-		$shippingPrice = $shipping->price;
-		$paymentPrice = $payment->price;
-		$totalPrice = $itemsPrice + $shippingPrice + $paymentPrice;
-
-		$this->db->beginTransaction();
-
-		try {
-			$stmt = $this->db->prepare("
-                INSERT INTO orders (customer_id, shipping_method_id, payment_method_id, shipping_price, payment_price, note, total_price, status)
-                VALUES (:customerId, :shippingMethodId, :paymentMethodId, :shippingPrice, :paymentPrice, :note, :totalPrice, 'new')
-            ");
-
-			$stmt->execute([
-				'customerId'       => $customerId,
-				'shippingMethodId' => $shippingMethodId,
-				'paymentMethodId'  => $paymentMethodId,
-				'shippingPrice'    => $shippingPrice,
-				'paymentPrice'     => $paymentPrice,
-				'note'             => $note,
-				'totalPrice'       => $totalPrice,
-			]);
-
-			$orderId = (int) $this->db->lastInsertId();
-
-			$itemStmt = $this->db->prepare('
-                INSERT INTO order_items (order_id, product_id, product_name, variant, quantity, unit_price)
-                VALUES (:orderId, :productId, :productName, :variant, :quantity, :unitPrice)
-            ');
-
-			foreach ($cartItems as $item) {
-				$itemStmt->execute([
-					'orderId'     => $orderId,
-					'productId'   => $item->productId,
-					'productName' => $item->productName,
-					'variant'     => $item->variant,
-					'quantity'    => $item->quantity,
-					'unitPrice'   => $item->unitPrice,
-				]);
-			}
-
-			$this->db->commit();
-		} catch (\Throwable $e) {
-			$this->db->rollBack();
-			throw $e;
-		}
-
-		return $this->getById($orderId);
-	}
-
-	/**
-	 * Vrátí položky objednávky.
-	 *
-	 * @return list<OrderItemDTO>
-	 */
-	private function getItems(int $orderId): array {
-		$stmt = $this->db->prepare('
-            SELECT * FROM order_items
-            WHERE order_id = :orderId
-            ORDER BY id
-        ');
-		$stmt->execute(['orderId' => $orderId]);
-
-		return array_map(OrderItemDTO::fromRow(...), $stmt->fetchAll());
-	}
-
+    public static function generateOrderNumber(): string
+    {
+        return 'BB-' . date('Y') . '-' . str_pad((string)random_int(1, 999999), 6, '0', STR_PAD_LEFT);
+    }
 }

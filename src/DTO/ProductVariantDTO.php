@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-final class PaymentMethodDTO
+final class ProductVariantDTO
 {
     public function __construct(
         public readonly int $id,
-        public readonly string $code,
+        public readonly int $productId,
         public readonly string $name,
-        public readonly string $description,
-        public readonly float $fee,
+        public readonly string $value,
+        public readonly ?float $priceModifier,
     ) {}
 
     /** @param array<string,mixed> $row */
@@ -16,10 +16,10 @@ final class PaymentMethodDTO
     {
         return new self(
             (int)$row['id'],
-            (string)$row['code'],
+            (int)$row['product_id'],
             (string)$row['name'],
-            (string)($row['description'] ?? ''),
-            (float)$row['fee'],
+            (string)$row['value'],
+            isset($row['price_modifier']) && $row['price_modifier'] !== null ? (float)$row['price_modifier'] : null,
         );
     }
 }

@@ -1,51 +1,38 @@
 <?php
-
 declare(strict_types=1);
 
-final class CategoryRepository {
+final class CategoryRepository
+{
+    private PDO $pdo;
 
-	private PDO $db;
+    public function __construct()
+    {
+        $this->pdo = Database::get();
+    }
 
-	public function __construct() {
-		$this->db = Database::getConnection();
-	}
+    /** @return CategoryDTO[] */
+    public function getAll(): array
+    {
+        $stmt = $this->pdo->query('SELECT * FROM categories ORDER BY name ASC');
+        $out = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $out[] = CategoryDTO::fromRow($row);
+        }
+        return $out;
+    }
 
-	/**
-	 * Vrátí všechny kategorie.
-	 *
-	 * @return list<CategoryDTO>
-	 */
-	public function getAll(): array {
-		$stmt = $this->db->query('SELECT * FROM categories ORDER BY name');
+    public function getBySlug(string $slug): ?CategoryDTO
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM categories WHERE slug = :slug LIMIT 1');
+        $stmt->execute(['slug' => $slug]);
+        $row = $stmt->fetch();
+        return $row ? CategoryDTO::fromRow($row) : null;
+    }
 
-		return array_map(
-			CategoryDTO::fromRow(...),
-			$stmt->fetchAll(),
-		);
-	}
-
-	/**
-	 * Najde kategorii podle ID.
-	 */
-	public function getById(int $id): ?CategoryDTO {
-		$stmt = $this->db->prepare('SELECT * FROM categories WHERE id = :id');
-		$stmt->execute(['id' => $id]);
-
-		$row = $stmt->fetch();
-
-		return $row ? CategoryDTO::fromRow($row) : NULL;
-	}
-
-	/**
-	 * Najde kategorii podle slugu (URL identifikátoru).
-	 */
-	public function getBySlug(string $slug): ?CategoryDTO {
-		$stmt = $this->db->prepare('SELECT * FROM categories WHERE slug = :slug');
-		$stmt->execute(['slug' => $slug]);
-
-		$row = $stmt->fetch();
-
-		return $row ? CategoryDTO::fromRow($row) : NULL;
-	}
-
+    public function countProducts(int $categoryId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM products WHERE category_id = :id');
+        $stmt->execute(['id' => $categoryId]);
+        return (int)$stmt->fetchColumn();
+    }
 }

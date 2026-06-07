@@ -1,27 +1,23 @@
 <?php
-
 declare(strict_types=1);
 
-readonly class ProductImageDTO {
+final class ProductImageDTO
+{
+    public function __construct(
+        public readonly int $id,
+        public readonly int $productId,
+        public readonly string $path,
+        public readonly string $alt,
+    ) {}
 
-	public function __construct(
-		public int $id,
-		public int $productId,
-		public string $image,
-		public int $sortOrder,
-	) {
-	}
-
-	/**
-	 * @param array<string, mixed> $row
-	 */
-	public static function fromRow(array $row): self {
-		return new self(
-			id: (int) $row['id'],
-			productId: (int) $row['product_id'],
-			image: $row['image'],
-			sortOrder: (int) $row['sort_order'],
-		);
-	}
-
+    /** @param array<string,mixed> $row */
+    public static function fromRow(array $row): self
+    {
+        return new self(
+            (int)$row['id'],
+            (int)$row['product_id'],
+            (string)$row['path'],
+            (string)($row['alt'] ?? ''),
+        );
+    }
 }

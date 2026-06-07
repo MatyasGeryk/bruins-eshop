@@ -1,146 +1,115 @@
 <?php
-
 declare(strict_types=1);
 
-final class Cart {
+/**
+ * Košík uložený v session.
+ * Položka: ['product_id' => int, 'variant_id' => ?int, 'quantity' => int]
+ * Klíč v session: "product_id-variant_id" (variant_id může být 0).
+ */
+final class Cart
+{
+    private const SESSION_KEY = 'cart';
 
-	private const string SESSION_KEY = 'cart';
+    /** @return array<string,array{product_id:int,variant_id:?int,quantity:int}> */
+    public static function all(): array
+    {
+        return $_SESSION[self::SESSION_KEY] ?? [];
+    }
 
-	public function __construct() {
-		if (session_status() === PHP_SESSION_NONE) {
-			session_start();
-		}
-	}
+    public static function add(int $productId, ?int $variantId, int $quantity = 1): void
+    {
+        if ($quantity < 1) $quantity = 1;
+        $key = self::key($productId, $variantId);
+        $cart = self::all();
+        if (isset($cart[$key])) {
+            $cart[$key]['quantity'] += $quantity;
+        } else {
+            $cart[$key] = [
+                'product_id' => $productId,
+                'variant_id' => $variantId,
+                'quantity'   => $quantity,
+            ];
+        }
+        $_SESSION[self::SESSION_KEY] = $cart;
+    }
 
-	/**
-	 * Přidá produkt do košíku (nebo zvýší množství, pokud už v košíku je).
-	 * Stejný produkt v různých variantách = samostatné položky.
-	 */
-	public function add(int $productId, string $productName, float $unitPrice, string $image, int $quantity = 1, string $variant = ''): void {
-		$items = $this->getRawItems();
-		$key = $this->makeKey($productId, $variant);
+    public static function update(string $key, int $quantity): void
+    {
+        $cart = self::all();
+        if (!isset($cart[$key])) return;
+        if ($quantity < 1) {
+            unset($cart[$key]);
+        } else {
+            $cart[$key]['quantity'] = $quantity;
+        }
+        $_SESSION[self::SESSION_KEY] = $cart;
+    }
 
-		if (isset($items[$key])) {
-			$items[$key]['quantity'] += $quantity;
-		} else {
-			$items[$key] = [
-				'product_id'   => $productId,
-				'product_name' => $productName,
-				'unit_price'   => $unitPrice,
-				'image'        => $image,
-				'quantity'     => $quantity,
-				'variant'      => $variant,
-			];
-		}
+    public static function remove(string $key): void
+    {
+        $cart = self::all();
+        unset($cart[$key]);
+        $_SESSION[self::SESSION_KEY] = $cart;
+    }
 
-		$_SESSION[self::SESSION_KEY] = $items;
-	}
+    public static function clear(): void
+    {
+        $_SESSION[self::SESSION_KEY] = [];
+    }
 
-	/**
-	 * Nastaví množství konkrétního produktu (a varianty) v košíku.
-	 */
-	public function updateQuantity(int $productId, int $quantity, string $variant = ''): void {
-		$items = $this->getRawItems();
-		$key = $this->makeKey($productId, $variant);
+    public static function count(): int
+    {
+        $sum = 0;
+        foreach (self::all() as $item) {
+            $sum += $item['quantity'];
+        }
+        return $sum;
+    }
 
-		if ($quantity <= 0) {
-			unset($items[$key]);
-		} elseif (isset($items[$key])) {
-			$items[$key]['quantity'] = $quantity;
-		}
+    public static function isEmpty(): bool
+    {
+        return self::all() === [];
+    }
 
-		$_SESSION[self::SESSION_KEY] = $items;
-	}
+    public static function key(int $productId, ?int $variantId): string
+    {
+        return $productId . '-' . ($variantId ?? 0);
+    }
 
-	/**
-	 * Odebere produkt (a variantu) z košíku.
-	 */
-	public function remove(int $productId, string $variant = ''): void {
-		$items = $this->getRawItems();
-		$key = $this->makeKey($productId, $variant);
-		unset($items[$key]);
-		$_SESSION[self::SESSION_KEY] = $items;
-	}
+    /**
+     * Vrátí detailní položky košíku včetně produktu, varianty a mezisoučtu.
+     * @return array<int,array<string,mixed>>
+     */
+    public static function detailed(): array
+    {
+        $repo = new ProductRepository();
+        $out = [];
+        foreach (self::all() as $key => $item) {
+            $product = $repo->getById($item['product_id']);
+            if ($product === null) continue;
+            $variant = null;
+            if ($item['variant_id'] !== null && $item['variant_id'] > 0) {
+                $variant = $repo->getVariantById($item['variant_id']);
+            }
+            $unit = $product->getEffectivePrice();
+            $out[] = [
+                'key'        => $key,
+                'product'    => $product,
+                'variant'    => $variant,
+                'quantity'   => $item['quantity'],
+                'unit_price' => $unit,
+                'subtotal'   => $unit * $item['quantity'],
+            ];
+        }
+        return $out;
+    }
 
-	/**
-	 * Vrátí všechny položky košíku jako DTO objekty.
-	 *
-	 * @return list<CartItemDTO>
-	 */
-	public function getItems(): array {
-		return array_values(
-			array_map(
-				fn(array $item): CartItemDTO => new CartItemDTO(
-					productId: $item['product_id'],
-					productName: $item['product_name'],
-					unitPrice: $item['unit_price'],
-					image: $item['image'],
-					quantity: $item['quantity'],
-					variant: $item['variant'] ?? '',
-				),
-				$this->getRawItems(),
-			),
-		);
-	}
-
-	/**
-	 * Vrátí celkovou cenu košíku.
-	 */
-	public function getTotalPrice(): float {
-		return array_sum(
-			array_map(
-				fn(CartItemDTO $item): float => $item->getTotalPrice(),
-				$this->getItems(),
-			),
-		);
-	}
-
-	/**
-	 * Vrátí celkový počet kusů v košíku.
-	 */
-	public function getTotalQuantity(): int {
-		return array_sum(
-			array_map(
-				fn(array $item): int => $item['quantity'],
-				$this->getRawItems(),
-			),
-		);
-	}
-
-	/**
-	 * Vyprázdní celý košík.
-	 */
-	public function clear(): void {
-		$_SESSION[self::SESSION_KEY] = [];
-	}
-
-	/**
-	 * Zjistí, zda je košík prázdný.
-	 */
-	public function isEmpty(): bool {
-		return $this->getRawItems() === [];
-	}
-
-	/**
-	 * Vytvoří klíč pro položku košíku (productId nebo productId|variant).
-	 */
-	private function makeKey(int $productId, string $variant): string {
-		return $variant === '' ? (string) $productId : $productId . '|' . $variant;
-	}
-
-	/**
-	 * @return array<string, array{product_id: int, product_name: string, unit_price: float, image: string, quantity: int, variant: string}>
-	 */
-	private function getRawItems(): array {
-		$items = $_SESSION[self::SESSION_KEY] ?? [];
-
-		// Migrace ze starého formátu (bez variant) – vyprázdní košík
-		if ($items !== [] && !array_key_exists('variant', reset($items))) {
-			$_SESSION[self::SESSION_KEY] = [];
-			return [];
-		}
-
-		return $items;
-	}
-
+    public static function itemsTotal(): float
+    {
+        $sum = 0.0;
+        foreach (self::detailed() as $row) {
+            $sum += (float)$row['subtotal'];
+        }
+        return $sum;
+    }
 }

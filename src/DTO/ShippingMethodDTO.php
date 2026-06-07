@@ -1,34 +1,27 @@
 <?php
-
 declare(strict_types=1);
 
-readonly class ShippingMethodDTO {
+final class ShippingMethodDTO
+{
+    public function __construct(
+        public readonly int $id,
+        public readonly string $code,
+        public readonly string $name,
+        public readonly string $description,
+        public readonly float $price,
+        public readonly string $deliveryTime,
+    ) {}
 
-	public function __construct(
-		public int $id,
-		public string $name,
-		public float $price,
-		public string $deliveryDays,
-	) {
-	}
-
-	/**
-	 * @param array<string, mixed> $row
-	 */
-	public static function fromRow(array $row): self {
-		return new self(
-			id: (int) $row['id'],
-			name: $row['name'],
-			price: (float) $row['price'],
-			deliveryDays: $row['delivery_days'],
-		);
-	}
-
-	/**
-	 * Je doprava zdarma?
-	 */
-	public function isFree(): bool {
-		return $this->price === 0.0;
-	}
-
+    /** @param array<string,mixed> $row */
+    public static function fromRow(array $row): self
+    {
+        return new self(
+            (int)$row['id'],
+            (string)$row['code'],
+            (string)$row['name'],
+            (string)($row['description'] ?? ''),
+            (float)$row['price'],
+            (string)($row['delivery_time'] ?? ''),
+        );
+    }
 }
